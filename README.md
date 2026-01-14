@@ -45,4 +45,3 @@ The project relies on the following pre-generated illumination light field data 
 4. For 3D imaging analysis, ensure that data files such as `I_exc532_51_3D.mat`/`I_exc488_51_3D.mat` are in the same path as the code files.
 
 5. The photobleaching GUI analysis (`freqSAC_bleaching_v6.m`) can be run directly, with imaging results viewed by selecting the scan number through the interface.
-> （注：文档部分内容可能由 AI 生成）
