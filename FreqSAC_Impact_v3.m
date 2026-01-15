@@ -1,5 +1,5 @@
-%% SAC调制频谱分析系统 - 多参数影响研究
-% 研究CM2、I_exc、I_hexc、f1、f2等参数对频谱分量的影响
+%% SAC Modulation Spectrum Analysis System - Study on Multi-Parameter Impacts
+% Study the impacts of parameters such as CM2, I_exc, I_hexc, f1, f2 on spectral components
 clc; clear; close all;
 
 %% 全局参数设置
