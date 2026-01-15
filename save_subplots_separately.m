@@ -1,23 +1,19 @@
 function save_subplots_separately(fig_handle, output_dir, varargin)
-    % SAVE_SUBPLOTS_SEPARATELY 保存图形中的所有子图为单独的文件
+    % SAVE_SUBPLOTS_SEPARATELY: Save all subplots in a figure as separate files
     %
-    % 语法:
-    %   save_subplots_separately(fig_handle, output_dir)
-    %   save_subplots_separately(fig_handle, output_dir, 'PropertyName', PropertyValue, ...)
+    % Input Arguments:
+    %   fig_handle   - Figure handle, can be a figure object or figure number
+    %   output_dir   - Output folder path
     %
-    % 输入参数:
-    %   fig_handle   - 图形句柄，可以是图形对象或图形编号
-    %   output_dir   - 输出文件夹路径
+    % Optional Parameters:
+    %   'FileFormat' - Saved file format, default is 'png'
+    %                  Valid values: 'png', 'jpg', 'jpeg', 'tiff', 'pdf', 'eps'
+    %   'DPI'        - Image resolution, default is 300
+    %   'Prefix'     - File name prefix, default is 'subplot_'
+    %   'Silent'     - Whether to display progress information, default is false
     %
-    % 可选参数 (键值对):
-    %   'FileFormat' - 保存的文件格式，默认为 'png'
-    %                  可选值: 'png', 'jpg', 'jpeg', 'tiff', 'pdf', 'eps'
-    %   'DPI'        - 图像分辨率，默认为 300
-    %   'Prefix'     - 文件名前缀，默认为 'subplot_'
-    %   'Silent'     - 是否显示进度信息，默认为 false
-    %
-    % 示例:
-    %   % 创建示例图形
+    % Examples:
+    %   % Create sample figure
     %   fig = figure;
     %   for i = 1:6
     %       subplot(2, 3, i);
@@ -26,21 +22,17 @@ function save_subplots_separately(fig_handle, output_dir, varargin)
     %       title(sprintf('Subplot %d', i));
     %   end
     %   
-    %   % 保存子图
+    %   % Save subplots
     %   save_subplots_separately(fig, 'output_plots', 'FileFormat', 'png', 'DPI', 300);
     %
-    % 注意:
-    %   - 如果输出文件夹不存在，将自动创建
-    %   - 子图将按照它们在图形中的顺序编号
-    %   - 支持大多数常见的MATLAB图形类型
     
-    % 默认参数设置
+    % Default parameter settings
     default_format = 'tiff';
     default_dpi = 600;
     default_prefix = 'subplot_';
     default_silent = false;
     
-    % 解析输入参数
+    % Parse input parameters
     p = inputParser;
     p.addRequired('fig_handle');
     p.addRequired('output_dir');
@@ -48,7 +40,6 @@ function save_subplots_separately(fig_handle, output_dir, varargin)
     p.addParameter('DPI', default_dpi, @(x) isscalar(x) && x > 0);
     p.addParameter('Prefix', default_prefix, @ischar);
     p.addParameter('Silent', default_silent, @islogical);
-    
     p.parse(fig_handle, output_dir, varargin{:});
     
     FileFormat = p.Results.FileFormat;
@@ -56,26 +47,26 @@ function save_subplots_separately(fig_handle, output_dir, varargin)
     Prefix = p.Results.Prefix;
     Silent = p.Results.Silent;
     
-    % 验证图形句柄
+    % Validate figure handle
     if ~ishandle(fig_handle) || ~strcmp(get(fig_handle, 'Type'), 'figure')
-        error('第一个输入参数必须是有效的图形句柄');
+        error('The first input parameter must be a valid figure handle');
     end
     
-    % 创建输出文件夹（如果不存在）
+    % Create output folder
     if ~exist(output_dir, 'dir')
         mkdir(output_dir);
         if ~Silent
-            fprintf('已创建输出文件夹: %s\n', output_dir);
+            fprintf('Output folder created: %s\n', output_dir);
         end
     end
     
-    % 获取图形中的所有子图
+    % Get all subplots in the figure
     axes_handles = findobj(fig_handle, 'Type', 'axes');
     
-    % 过滤掉可能的颜色条轴
+    % Filter out possible colorbar axes
     valid_axes = [];
     for i = 1:length(axes_handles)
-        % 检查是否为颜色条
+        % Check if it is a colorbar
         if ~strcmp(get(axes_handles(i), 'Tag'), 'Colorbar')
             valid_axes = [valid_axes; axes_handles(i)];
         end
@@ -84,28 +75,28 @@ function save_subplots_separately(fig_handle, output_dir, varargin)
     num_subplots = length(valid_axes);
     
     if num_subplots == 0
-        warning('在图形中未找到任何子图');
+        warning('No subplots found in the figure');
         return;
     end
     
     if ~Silent
-        fprintf('找到 %d 个子图，正在保存到 %s...\n', num_subplots, output_dir);
+        fprintf('Found %d subplots, saving to %s...\n', num_subplots, output_dir);
     end
     
-    % 保存每个子图
+    % Save each subplot
     for i = 1:num_subplots
-        % 激活当前子图
+        % Activate current subplot
         axes(valid_axes(i));
         
-        % 获取子图标题（如果有的话）
+        % Get subplot title
         title_handle = get(valid_axes(i), 'Title');
         title_text = get(title_handle, 'String');
         
-        % 创建文件名
+        % Create file name
         if isempty(title_text) || strcmp(title_text, '')
             filename = sprintf('%s%d.%s', Prefix, i, FileFormat);
         else
-            % 清理标题文本以用作文件名
+            % Clean title text for use as file name
             clean_title = strrep(title_text, ' ', '_');
             clean_title = strrep(clean_title, '/', '_');
             clean_title = strrep(clean_title, '\', '_');
@@ -120,49 +111,49 @@ function save_subplots_separately(fig_handle, output_dir, varargin)
             filename = sprintf('%s_%s.%s', Prefix, clean_title, FileFormat);
         end
         
-        % 完整的文件路径
+        % Full file path
         filepath = fullfile(output_dir, filename);
         
-        % 保存子图
+        % Save subplot
         try
-            % 创建临时图形以保存单个子图
+            % Create temporary figure to save single subplot
             temp_fig = figure('Visible', 'off');
             temp_ax = axes(temp_fig);
             
-            % 复制原始子图的内容
+            % Copy contents of original subplot
             copyobj(get(valid_axes(i), 'Children'), temp_ax);
             
-            % 复制标题
+            % Copy title
             if ~isempty(title_text) && ~strcmp(title_text, '')
                 title(temp_ax, title_text);
             end
             
-            % 复制轴标签
+            % Copy axis labels
             xlabel(temp_ax, get(valid_axes(i), 'XLabel').String);
             ylabel(temp_ax, get(valid_axes(i), 'YLabel').String);
             
-            % 复制轴范围
+            % Copy axis range
             xlim(temp_ax, get(valid_axes(i), 'XLim'));
             ylim(temp_ax, get(valid_axes(i), 'YLim'));
             
-            % 复制网格设置
+            % Copy grid settings
             grid(temp_ax, get(valid_axes(i), 'GridAlpha') > 0);
             
-            % 调整布局
+            % Adjust layout
             tightfig(temp_fig);
             
-            % 保存文件
+            % Save file
             print(temp_fig, '-dpng', sprintf('-r%d', DPI), filepath);
             
-            % 关闭临时图形
+            % Close temporary figure
             close(temp_fig);
             
             if ~Silent
-                fprintf('已保存: %s\n', filename);
+                fprintf('Saved: %s\n', filename);
             end
             
         catch ME
-            warning('保存子图 %d 时出错: %s', i, ME.message);
+            warning('Error saving subplot %d: %s', i, ME.message);
             if exist('temp_fig', 'var') && ishandle(temp_fig)
                 close(temp_fig);
             end
@@ -170,38 +161,38 @@ function save_subplots_separately(fig_handle, output_dir, varargin)
     end
     
     if ~Silent
-        fprintf('保存完成！\n');
+        fprintf('Saving completed！\n');
     end
 end
 
-% 辅助函数：调整图形布局以紧凑显示
+% Helper function: Adjust figure layout for compact display
 function tightfig(fig_handle)
-    % 获取图形中的所有轴
+    % Get all axes in the figure
     axes_handles = findobj(fig_handle, 'Type', 'axes');
     
     if isempty(axes_handles)
         return;
     end
     
-    % 获取当前图形位置
+    % Get current figure position
     fig_pos = get(fig_handle, 'Position');
     
-    % 获取第一个轴的位置和大小
+    % Get position and size of the first axis
     ax_pos = get(axes_handles(1), 'Position');
     
-    % 设置图形大小以匹配轴大小
+    % Set figure size to match axis size
     set(fig_handle, 'Position', [fig_pos(1), fig_pos(2), ax_pos(3)*fig_pos(3), ax_pos(4)*fig_pos(4)]);
     
-    % 将轴移动到图形的左上角
+    % Move axis to top-left corner of the figure
     set(axes_handles(1), 'Position', [0, 0, 1, 1]);
 end
 
-% 示例用法
+% Example usage
 function demo()
-    % 创建示例图形（类似参考图中的结构）
+    % Create sample figure
     fig = figure('Position', [100, 100, 1200, 800]);
     
-    % 第一行子图
+    % First row of subplots
     subplot(2, 4, 1);
     imagesc(rand(100, 100));
     colorbar;
@@ -222,7 +213,7 @@ function demo()
     colorbar;
     title('IntraC (1, 100W/cm²)');
     
-    % 第二行子图
+    % Second row of subplots
     subplot(2, 4, 5);
     imagesc(rand(100, 100) * 0.6 + 0.4);
     colorbar;
@@ -238,19 +229,19 @@ function demo()
     colorbar;
     title('IntraC after Blanking');
     
-    % 隐藏最后一个子图位置
+    % Hide last subplot position
     subplot(2, 4, 8);
     axis off;
     
-    % 调整整体布局
-    sgtitle('示例图形：多子图布局', 'FontSize', 16, 'FontWeight', 'bold');
+    % Adjust overall layout
+    sgtitle('Sample Figure: Multi-subplot Layout', 'FontSize', 16, 'FontWeight', 'bold');
     
-    % 保存子图到文件夹
+    % Save subplots to folder
     output_dir = 'output_subplots';
     save_subplots_separately(fig, output_dir, 'FileFormat', 'png', 'DPI', 300, 'Prefix', 'plot_');
     
-    % 显示结果
-    fprintf('\n示例完成！子图已保存到: %s\n', fullfile(pwd, output_dir));
-    fprintf('您可以在MATLAB命令窗口中输入以下命令来使用此函数：\n');
+    % Display results
+    fprintf('\nExample completed! Subplots have been saved to: %s\n', fullfile(pwd, output_dir));
+    fprintf('You can use this function by entering the following command in the MATLAB command window：\n');
     fprintf('save_subplots_separately(figure_handle, ''output_directory'')\n');
 end
