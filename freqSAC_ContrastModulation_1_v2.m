@@ -1,7 +1,7 @@
-%% 探讨调制对比度对fmSAC的FWHM的影响 - GPU加速版本
-% X轴为I_exc，Y轴为fwhm，CM=[0.1,0.3,0.5,0.7,0.9]
-% 添加进度条，自动适应不同数据大小
-% GPU加速版本
+%% Explore the effect of modulation contrast on FWHM of fmSAC - GPU accelerated version
+% X-axis: I_exc, Y-axis: fwhm, CM=[0.1,0.3,0.5,0.7,0.9]
+% Add progress bar, automatically adapt to different data sizes
+% GPU accelerated version
 
 clc
 clear all
@@ -10,81 +10,72 @@ addpath(genpath('PSF'));
 addpath(genpath('CSV'));
 tic;
 
-% 检查GPU可用性
+% Check GPU availability
 if gpuDeviceCount > 0
     useGPU = true;
     gpu = gpuDevice();
-    fprintf('使用GPU加速: %s\n', gpu.Name);
+    fprintf('Using GPU acceleration: %s\n', gpu.Name);
 else
     useGPU = false;
-    fprintf('未检测到GPU，使用CPU计算\n');
+    fprintf('No GPU detected, using CPU for computation\n');
 end
 
-%% 物理常数和参数设置
+%% Physical constants and parameter settings
 k_isc = 1.1e6;
 k_t = 0.49e6;
 k0 = 2.56e8;
 c1 = 1 + k_isc/k_t;
-h = 6.626e-34;      % 普兰克常数 
-c = 3e10;           % 光速，以cm做度量
-lambda_s = 532e-7;  % 以cm做度量
+h = 6.626e-34;      
+c = 3e10;           
+lambda_s = 532e-7; 
 lambda_d = 488e-7;
-
-sigma_s = 2.7e-16;  % 激发光吸收截面(针对532nm波长)
-sigma_d = sigma_s * 0.512063188; % 采用488nm波长
-
-% I_s = 10e3;         % 对应光强10k W/cm2
-I_d = 10e3;         % 对应光强500k W/cm2
-f1 = 10e3;          % f1频率
-f2 = 15e3;          % f2频率
+sigma_s = 2.7e-16; 
+sigma_d = sigma_s * 0.512063188; 
+I_d = 10e3;         
+f1 = 10e3;
+f2 = 15e3;
 interval = 10e-6;
 t = 0:interval:1-interval;
-m_d = 1.0;            % 竞争调制对比度CM=(Imax-Imin)/(Imax+Imin)
+m_d = 1.0;           
 
-% 将时间向量转移到GPU（如果可用）
+% Transfer time vector to GPU if available
 if useGPU
     t_gpu = gpuArray(t);
 else
     t_gpu = t;
 end
 
-%% 加载PSF数据
-% a=load('I_exc532_51_3D.mat');
-% I1=a.result.PSF(:,:,25);
-% b=load('I_hexc488_51_3D.mat');
-% I2=b.result.PSF(:,:,25);
-
-
+%% Load PSF data
 a=load('I_exc532_501.mat');
 I1=a.result.PSF;
 b=load('I_hexc488_501.mat');
 I2=b.result.PSF;
-% 归一化并缩放
+
+% Normalization and scaling
 I1 = I1 / max(I1(:));
 I2 = I2 / max(I2(:));
-% I_exc = I_s * I1;   % 对应光强10kW/cm2
-I_hexc = I_d* I2;   % 对应光强10kW/cm2
+I_hexc = I_d* I2;           % Corresponding light intensity 10kW/cm2
 
 [rows, cols] = size(I1);
-center_col = round(cols/2); % 自动确定中心列
+center_col = round(cols/2);  % Determine the central column
 
-%% 初始化参数
-I_s_values = (1:10) * 5e3; % I_s值数组
-modulation_depths = 0.1:0.1:1.0; % 调制深度数组
+%% Initialize parameters
+I_s_values = (1:10) * 5e3;            % Array of I_s values
+modulation_depths = 0.1:0.1:1.0;      % Array of modulation depths
 num_modulations = length(modulation_depths);
 num_I_s= length(I_s_values);
 
-% 预分配结果矩阵
-data = zeros(num_modulations + 1, num_I_s); % +1 用于传统SAC
+% Preallocate result matrix
+data = zeros(num_modulations + 1, num_I_s); 
 FWHM_temp = zeros(1, num_I_s); 
 
-%% FFT相关参数预计算
+%% Precompute FFT-related parameters
 N = length(t);
 frequencies = (-N/2:N/2-1) * (1/(N*interval));
 f1_idx = find(abs(frequencies - f1) == min(abs(frequencies - f1)), 1);
 f2_idx = find(abs(frequencies - f2) == min(abs(frequencies - f2)), 1);
 
-% 将频率索引转移到GPU（如果可用）
+% Transfer frequency indices to GPU if available
 if useGPU
     f1_idx_gpu = gpuArray(f1_idx);
     f2_idx_gpu = gpuArray(f2_idx);
@@ -95,9 +86,9 @@ else
     N_gpu = N;
 end
 
-%% 计算传统SAC的FWHM
-fprintf('计算传统SAC...\n');
-progressBar = waitbar(0, '计算传统SAC: 0%', 'Name', '进度');
+%% Calculate FWHM of conventional SAC
+fprintf('Calculating conventional SAC...\n');
+progressBar = waitbar(0, 'Calculating conventional SAC: 0%', 'Name', 'Progress');
 
 for m = 1:num_I_s
     I_exc = I_s_values(m) * I1;
@@ -112,18 +103,18 @@ for m = 1:num_I_s
     y_SAC = y_SAC / max(y_SAC);
     half_max = max(y_SAC) / 2;
     half_index = find(y_SAC >= half_max);
-    FWHM_temp(m) = length(half_index); % 500像素代表500nm，一个像素代表1nm
+    FWHM_temp(m) = length(half_index);  % 500 pixels represent 500nm, 1 pixel = 1nm
     
-    waitbar(m/num_I_s, progressBar, sprintf('计算传统SAC: %.0f%%', m/num_I_s*100));
+    waitbar(m/num_I_s, progressBar, sprintf('Calculating conventional SAC: %.0f%%', m/num_I_s*100));
 end
 
 data(1, :) = FWHM_temp;
 close(progressBar);
 
-%% 计算fmSAC的FWHM - GPU加速版本
-fprintf('计算fmSAC...\n');
+%% Calculate FWHM of fmSAC - GPU accelerated version
+fprintf('Calculating fmSAC...\n');
 total_iterations = num_modulations * num_I_s;
-progressBar = waitbar(0, '计算fmSAC: 0%', 'Name', '进度');
+progressBar = waitbar(0, 'Calculating fmSAC: 0%', 'Name', 'Progress');
 iteration_count = 0;
 
 for n = 1:num_modulations
@@ -135,13 +126,13 @@ for n = 1:num_modulations
         sig_harm = zeros(rows, 1);
         
         for i = 1:rows
-            % 计算速率常数
+            % Calculate rate constants
             k_s = sigma_s * I_exc(i, center_col) * lambda_s / (h * c);
             k_d = sigma_d * I_hexc(i, center_col) * lambda_d / (h * c);
             
-            % 双调制SAC信号 - 使用GPU计算
+            % Dual-modulation SAC signal
             if useGPU
-                % 在GPU上计算
+                % Compute on GPU
                 k_s_gpu = gpuArray(k_s);
                 k_d_gpu = gpuArray(k_d);
                 m_s_gpu = gpuArray(m_s);
@@ -149,63 +140,61 @@ for n = 1:num_modulations
                 k0_gpu = gpuArray(k0);
                 c1_gpu = gpuArray(c1);
                 
-                % GPU计算
                 y_s_gpu = (k_s_gpu * (1 + m_s_gpu * cos(2*pi*f1*t_gpu))) ./ ...
                           (c1_gpu * (k_s_gpu * (1 + m_s_gpu * cos(2*pi*f1*t_gpu)) + ...
                            k_d_gpu * (1 + m_d_gpu * cos(2*pi*f2*t_gpu))) + k0_gpu);
                 
-                % GPU FFT分析
+                % FFT analysis
                 f_omiga_gpu = fft(y_s_gpu);
                 f_omiga_shift_gpu = fftshift(f_omiga_gpu);
                 result_gpu = abs(f_omiga_shift_gpu) / max(abs(f_omiga_shift_gpu));
                 
-                % 计算总功率（去除DC分量）
+                % Calculate total power
                 total_power_gpu = sum(result_gpu) - result_gpu(N_gpu/2+1);
                 
-                % 提取特定频率分量
+                % Extract specific frequency components
                 sig_fund(i) = gather(result_gpu(f1_idx_gpu) / total_power_gpu);
                 sig_harm(i) = gather(result_gpu(f2_idx_gpu) / total_power_gpu);
             else
-                % CPU计算（原代码）
+                % Compute on CPU
                 y_s = (k_s * (1 + m_s * cos(2*pi*f1*t))) ./ ...
                       (c1 * (k_s * (1 + m_s * cos(2*pi*f1*t)) + k_d * (1 + m_d * cos(2*pi*f2*t))) + k0);
                 
-                % FFT分析
+                % FFT analysis
                 f_omiga = fft(y_s);
                 f_omiga_shift = fftshift(f_omiga);
                 result = abs(f_omiga_shift) / max(abs(f_omiga_shift));
                 
-                % 计算总功率（去除DC分量）
+                % Calculate total power
                 total_power = sum(result) - result(N/2+1);
                 
-                % 提取特定频率分量
+                % Extract specific frequency components
                 sig_fund(i) = result(f1_idx) / total_power;
                 sig_harm(i) = result(f2_idx) / total_power;
             end
         end
         
-        % 计算fmSAC信号
+        % Calculate fmSAC signal
         alpha = min(sig_fund ./ sig_harm);
         fmSAC_signal = sig_fund - alpha * sig_harm;
         
-        % 归一化并计算FWHM
+        % Normalize and calculate FWHM
         fmSAC_signal = fmSAC_signal / max(fmSAC_signal);
         half_max = max(fmSAC_signal) / 2;
         half_index = find(fmSAC_signal >= half_max);
         FWHM_temp(m) = length(half_index);
         
-        % 更新进度条
+        % Update progress bar
         iteration_count = iteration_count + 1; 
         waitbar(iteration_count/total_iterations, progressBar, ...
-            sprintf('计算fmSAC (CM=%.1f): %.0f%%', m_d, iteration_count/total_iterations*100));
+        sprintf('Calculating fmSAC (CM=%.1f): %.0f%%', m_d, iteration_count/total_iterations*100));
     end
-    
     data(n+1, :) = FWHM_temp;
 end
 
 close(progressBar);
 
-%% 绘图
+%% Plotting
 figure('Position', [100, 100, 1400, 750]);
 hold on;
 
@@ -213,7 +202,7 @@ colors = {'k','r','g','b','c','m','#EDB120','#4DBEEE','y','#7E2F8E','#77AC30'};
 line_styles = {'-','--',':','-.','--',':','-.','--',':','-.','--'};
 markers = {'s','|','d','^','v','p','h','+','o','.','*'};
 
-% 根据数据大小自动调整线宽和标记大小
+% Automatically adjust line width and marker size based on data size
 if rows > 1000
     line_width = 1.5;
     marker_size = 6;
@@ -222,13 +211,13 @@ else
     marker_size = 8;
 end
 
-% 绘制所有曲线
+% Plot all curves
 legend_labels = cell(num_modulations + 1, 1);
 legend_labels{1} = 'SAC';
 
 for j = 1:num_modulations + 1
     if j == 1
-        % 传统SAC
+        % Conventional SAC
         plot(I_s_values/1000, data(j, :), ...
             'Color', colors{1}, ...
             'LineStyle', line_styles{1}, ...
@@ -248,16 +237,16 @@ for j = 1:num_modulations + 1
     end
 end
 
-%% 图形美化
+%% Figure beautification
 set(gca, 'LineWidth', 2, 'FontWeight', 'bold', 'FontSize', 18);
 ylabel('FWHM (nm)', 'FontWeight', 'bold', 'FontSize', 24);
 xlabel('I_{exc} (kW/cm^{2})', 'FontWeight', 'bold', 'FontSize', 24);
-% title('调制对比度对fmSAC的FWHM的影响 (GPU加速)', 'FontWeight', 'bold', 'FontSize', 18);
+% title('Effect of modulation contrast on FWHM of fmSAC (GPU accelerated)', 'FontWeight', 'bold', 'FontSize', 18);
 
 grid on;
 box on;
 
-% 根据数据范围自动调整坐标轴
+% Automatically adjust axes based on data range
 xlim([min(I_s_values/1000), max(I_s_values/1000)]);
 ylim([120, max(data(:)) * 1.05+20]);
 
@@ -266,26 +255,23 @@ legend(legend_labels, 'Box', 'off', 'FontWeight', 'bold', 'FontSize', 12, ...
 
 % set(gca, 'LineWidth', 2, 'FontWeight', 'bold', 'FontSize', 18);
 
-
-fprintf('计算完成！\n');
+fprintf('Calculation completed!\n');
 elapsedTime = toc;
-fprintf('代码运行时间为: %.4f 秒\n', elapsedTime);
+fprintf('Code execution time: %.4f 秒\n', elapsedTime);
 
-% 显示GPU内存使用情况（如果使用GPU）- 兼容不同MATLAB版本
+% Display GPU memory usage
 if useGPU
     try
-        % 尝试新版本的属性名
         gpuInfo = gpuDevice();
         if isprop(gpuInfo, 'UsedMemory') && isprop(gpuInfo, 'AvailableMemory')
-            fprintf('GPU内存使用: %.2f MB / %.2f MB\n', ...
+            fprintf('GPU memory usage: %.2f MB / %.2f MB\n', ...
                 gpuInfo.UsedMemory/1e6, gpuInfo.AvailableMemory/1e6);
         elseif isprop(gpuInfo, 'TotalMemory')
-            % 旧版本MATLAB
-            fprintf('GPU总内存: %.2f MB\n', gpuInfo.TotalMemory/1e6);
+            fprintf('Total GPU memory: %.2f MB\n', gpuInfo.TotalMemory/1e6);
         else
-            fprintf('GPU信息: %s\n', gpuInfo.Name);
+            fprintf('GPU information: %s\n', gpuInfo.Name);
         end
     catch
-        fprintf('无法获取GPU内存信息\n');
+        fprintf('Failed to get GPU memory information\n');
     end
 end
