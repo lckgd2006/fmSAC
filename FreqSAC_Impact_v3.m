@@ -2,7 +2,7 @@
 % Study the impacts of parameters such as CM2, I_exc, I_hexc, f1, f2 on spectral components
 clc; clear; close all;
 
-%% 全局参数设置
+%% Global Parameter Settings
 globalParams = struct(...
     'k_isc', 1.1e6, ...
     'k_t', 0.49e6, ...
@@ -15,36 +15,36 @@ globalParams = struct(...
     'sigma_d_ratio', 0.049850201 ...
 );
 
-%% 分析参数配置
+%% Analysis Parameter Configuration
 analysisConfig = struct(...
-    'I_s', 10e3, ...          % 激发光强度 (W/cm²)
-    'I_d', 500e3, ...        % 竞争光强度 (W/cm²)
-    'f1', 10e3, ...           % 激发调制频率 (Hz)
-    'f2', 15e3, ...           % 竞争调制频率 (Hz)
-    'm_s', 1.0, ...           % 激发调制对比度
-    'm_d', 1.0, ...           % 竞争调制对比度
-    'duration', 1, ...        % 信号持续时间 (s)
-    'interval', 10e-6, ...    % 采样间隔 (s)
-    'high_res_interval', 0.1e-6 ... % 高分辨率采样间隔
+    'I_s', 10e3, ...                % Excitation light intensity (W/cm²)
+    'I_d', 500e3, ...               % Competition light intensity (W/cm²)
+    'f1', 10e3, ...                 % Excitation modulation frequency (Hz)
+    'f2', 15e3, ...                 % Competition modulation frequency (Hz)
+    'm_s', 1.0, ...                 % Excitation modulation contrast
+    'm_d', 1.0, ...                 % Competition modulation contrast
+    'duration', 1, ...              % Signal duration (s)
+    'interval', 10e-6, ...          % Sampling interval (s)
+    'high_res_interval', 0.1e-6 ... % High-resolution sampling interval
 );
 
-%% 辅助函数 - 计算SAC信号和频谱分量（优化版）
+%% Auxiliary Function - Calculate SAC Signal and Spectral Components
 function results = computeSACComponents(globalParams, I_s, I_d, f1, f2, m_s, m_d, duration, interval)
-    % 计算相关常数
+    % Calculate relevant constants
     h = globalParams.h;
     c = globalParams.c;
     c1 = 1 + globalParams.k_isc/globalParams.k_t;
     sigma_d = globalParams.sigma_s * globalParams.sigma_d_ratio;
     
-    % 计算激发和竞争速率
+    % Calculate excitation and competition rates
     k_s = globalParams.sigma_s * I_s * globalParams.lambda_s / (h * c);
     k_d = sigma_d * I_d * globalParams.lambda_d / (h * c);
     
-    % 生成时间序列（向量化计算）
+    % Generate time series
     t = 0:interval:duration-interval;
     n = length(t);
     
-    % 生成调制信号（向量化计算）
+    % Generate modulation signals
     cos_f1 = cos(2*pi*f1*t);
     cos_f2 = cos(2*pi*f2*t);
     
@@ -53,20 +53,20 @@ function results = computeSACComponents(globalParams, I_s, I_d, f1, f2, m_s, m_d
                    k_d*(1 + m_d * cos_f2)) + globalParams.k0;
     y_s = numerator ./ denominator;
     
-    % 傅里叶变换分析
+    % Fourier transform analysis
     f_fft = fft(y_s);
     f_fft_shift = fftshift(f_fft);
     result = abs(f_fft_shift) / max(abs(f_fft_shift));
     
-    % 计算频率索引
+    % Calculate frequency indices
     freq_resolution = (1/interval)/n;
     indices = round([f1, f2, f1+f2, abs(f2-f1), 2*f1, 3*f1] / freq_resolution) + n/2 + 1;
     
-    % 确保索引在有效范围内
+    % Ensure indices are within valid range
     indices = min(max(indices, 1), n);
     
-    % 计算频率分量占比
-    sumx = (sum(result) - result(n/2+1)) / 2; % 排除直流分量
+    % Calculate frequency component ratios
+    sumx = (sum(result) - result(n/2+1)) / 2; 
     if f1 == f2
         results = struct(...
             'fund', result(indices(1)) / sumx, ...
@@ -88,18 +88,16 @@ function results = computeSACComponents(globalParams, I_s, I_d, f1, f2, m_s, m_d
     end
 end
 
-%% 辅助函数 - 创建专业图表（优化版）
+%% Auxiliary Function - Create Professional Plots
 function createProfessionalPlot(xData, yData, labels, xLabel, yLabel, titleText, legendText)
-    figure('Position', [100, 100, 1000, 700], 'Color', 'w', 'Name', titleText);
-    
+    figure('Position', [100, 100, 1000, 700], 'Color', 'w', 'Name', titleText);   
     colors = lines(size(yData, 2));
     lineStyles = {'-', '--', ':', '-.', '-', '--'};
     lineWidths = [2.5, 2.5, 2.5, 2.5, 2.5, 2.5];
     markers = {'o', 's', '^', 'd', 'v', '+'};
-    
     hold on;
     for i = 1:size(yData, 2)
-        if length(xData) <= 10 % 数据点少时使用标记
+        if length(xData) <= 10 
             plot(xData, yData(:,i), ...
                 'Color', colors(i,:), ...
                 'LineStyle', lineStyles{mod(i-1, length(lineStyles)) + 1}, ...
@@ -118,11 +116,10 @@ function createProfessionalPlot(xData, yData, labels, xLabel, yLabel, titleText,
     end
     hold off;
     
-    % 设置图形属性
+    % Set plot properties
     grid on;
     % grid minor;
     ylim([0, 100]);
-
     set(gca, 'LineWidth', 2, 'FontSize', 18, 'FontWeight', 'bold', ...
              'XMinorTick', 'on', 'YMinorTick', 'on', ...
              'TickLength', [0.02, 0.02]);
@@ -135,15 +132,15 @@ function createProfessionalPlot(xData, yData, labels, xLabel, yLabel, titleText,
     set(gcf, 'Color', 'w');
 end
 
-%% 进度显示函数
+%% Progress Display Function
 function showProgress(current, total, message)
     if mod(current, ceil(total/10)) == 0 || current == total
         fprintf('%s: %.0f%%\n', message, current/total*100);
     end
 end
 
-%% 1. CM1变化对频谱分量的影响
-fprintf('=== 分析1: CM1调制深度对频谱分量的影响 ===\n');
+%% 1. Impact of CM1 Variation on Spectral Components
+fprintf('=== Analysis 1: Impact of CM1 Modulation Depth on Spectral Components ===\n');
 m_s_range = 0:0.01:1;
 components_relative_1 = zeros(length(m_s_range), 6);
 
@@ -154,7 +151,7 @@ for i = 1:length(m_s_range)
     components_relative_1(i,:) = [results.fund, results.sum, results.diff, ...
                                results.double, results.triple, results.harm];
     
-    showProgress(i, length(m_s_range), 'CM1分析进度');
+    showProgress(i, length(m_s_range), 'CM1 Analysis Progress');
 end
 
 labels = {'ξ(f_1)', 'ξ(f_1+f_2)', 'ξ(f_1-f_2)', 'ξ(2f_1)', 'ξ(3f_1)', 'ξ(f_2)'};
@@ -162,8 +159,8 @@ createProfessionalPlot(m_s_range*100, components_relative_1*100, labels, ...
     'CM_1 Modulation Depth (%)', 'Signal Intensity Ratio (%)', ...
     'Frequency Components vs CM_1 Modulation Depth', labels);
 
-%% 2. CM2变化对频谱分量的影响
-fprintf('=== 分析2: CM2调制深度对频谱分量的影响 ===\n');
+%% 2. Impact of CM2 Variation on Spectral Components
+fprintf('\n=== Analysis 2: Impact of CM2 Modulation Depth on Spectral Components ===\n');
 m_d_range = 0:0.01:1;
 components_relative_2 = zeros(length(m_d_range), 6);
 
@@ -174,7 +171,7 @@ for i = 1:length(m_d_range)
     components_relative_2(i,:) = [results.fund, results.sum, results.diff, ...
                                results.double, results.triple, results.harm];
     
-    showProgress(i, length(m_d_range), 'CM2分析进度');
+    showProgress(i, length(m_d_range), 'CM2 Analysis Progress');
 end
 
 labels = {'ξ(f_1)', 'ξ(f_1+f_2)', 'ξ(f_1-f_2)', 'ξ(2f_1)', 'ξ(3f_1)', 'ξ(f_2)'};
@@ -182,10 +179,9 @@ createProfessionalPlot(m_d_range*100, components_relative_2*100, labels, ...
     'CM_2 Modulation Depth (%)', 'Signal Intensity Ratio (%)', ...
     'Frequency Components vs CM_2 Modulation Depth', labels);
 
-%% 3. 激发光强I_exc变化的影响
-fprintf('\n=== 分析3: 激发光强对频谱分量的影响 ===\n');
-
-I_exc_range = linspace(0, 300, 1001)*1e3; % 更合理的点数
+%% 3. Impact of Excitation Light Intensity (I_exc) Variation
+fprintf('\n=== Analysis 3: Impact of Excitation Light Intensity on Spectral Components ===\n');
+I_exc_range = linspace(0, 300, 1001)*1e3; 
 components_exc = zeros(length(I_exc_range), 6);
 
 for i = 1:length(I_exc_range)
@@ -197,18 +193,17 @@ for i = 1:length(I_exc_range)
     components_exc(i,:) = [results.fund, results.sum, results.diff, ...
                           results.double, results.triple, results.harm];
     
-    showProgress(i, length(I_exc_range), 'I_exc分析进度');
+    showProgress(i, length(I_exc_range), 'I_exc Analysis Progress');
 end
 
 createProfessionalPlot(I_exc_range/1e3, components_exc*100, labels, ...
     'I_{exc} (kW/cm^2)', 'Signal Intensity Ratio (%)', ...
     'Frequency Components vs Excitation Intensity', labels);
 
-%% 4. 竞争光强I_hexc变化的影响
-fprintf('\n=== 分析4: 竞争光强对频谱分量的影响 ===\n');
+%% 4. Impact of Competition Light Intensity (I_hexc) Variation
+fprintf('\n=== Analysis 4: Impact of Competition Light Intensity on Spectral Components ===\n');
 
-% I_hexc_range = logspace(2, 6, 50); % 对数间隔，更好覆盖大范围
-I_hexc_range = linspace(0, 1000, 1001)*1e3; % 更合理的点数
+I_hexc_range = linspace(0, 1000, 1001)*1e3; 
 components_hexc = zeros(length(I_hexc_range), 6);
 
 for i = 1:length(I_hexc_range)
@@ -220,19 +215,17 @@ for i = 1:length(I_hexc_range)
     components_hexc(i,:) = [results.fund, results.sum, results.diff, ...
                           results.double, results.triple, results.harm];
     
-    showProgress(i, length(I_hexc_range), 'I_hexc分析进度');
+    showProgress(i, length(I_hexc_range), 'I_hexc Analysis Progress');
 end
 
 createProfessionalPlot(I_hexc_range/1e6, components_hexc*100, labels, ...
     'I_{hexc} (MW/cm^2)', 'Signal Intensity Ratio (%)', ...
     'Frequency Components vs Competition Intensity', labels);
 
-%% 5. 调制频率f1和f2变化的影响
-fprintf('\n=== 分析5: 调制频率对频谱分量的影响 ===\n');
+%% 5. Impact of Modulation Frequency (f1 and f2) Variation
+fprintf('\n=== Analysis 5: Impact of Modulation Frequency on Spectral Components ===\n');
 
-% f1频率变化的影响
-% f1_range = [1, 5, 10, 20, 50, 100, 200, 400] * 1e3;
-f1_range = linspace(1, 100, 100)*1e3; % 更合理的点数
+f1_range = linspace(1, 100, 100)*1e3;
 components_f1 = zeros(length(f1_range), 6);
 
 for i = 1:length(f1_range)
@@ -244,12 +237,10 @@ for i = 1:length(f1_range)
         results.double, results.triple, results.harm];
 
 
-    showProgress(i, length(f1_range), 'f1频率分析进度');
+    showProgress(i, length(f1_range), 'f1 Frequency Analysis Progress');
 end
 
-% f2频率变化的影响
-% f2_range = [1, 5, 10, 20, 50, 100, 200, 400] * 1e3;
-f2_range = linspace(1, 100, 100)*1e3; % 更合理的点数
+f2_range = linspace(1, 100, 100)*1e3; 
 components_f2 = zeros(length(f2_range), 6);
 
 for i = 1:length(f2_range)
@@ -260,10 +251,10 @@ for i = 1:length(f2_range)
     components_f2(i,:) = [results.fund, results.sum, results.diff, ...
                          results.double, results.triple, results.harm];
     
-    showProgress(i, length(f2_range), 'f2频率分析进度');
+    showProgress(i, length(f2_range), 'f2 Frequency Analysis Progress');
 end
 
-% 绘制频率影响结果
+% Plot frequency impact results
 createProfessionalPlot(f1_range/1e3, components_f1*100, labels, ...
     'f_1 (kHz)', 'Signal Intensity Ratio (%)', ...
     'Frequency Components vs Excitation Modulation Frequency f_1', labels);
@@ -272,11 +263,9 @@ createProfessionalPlot(f2_range/1e3, components_f2*100, labels, ...
     'f_2 (kHz)', 'Signal Intensity Ratio (%)', ...
     'Frequency Components vs Competition Modulation Frequency f_2', labels);
 
-%% 6. 频率组合优化分析
-fprintf('\n=== 分析6: 频率组合优化分析 ===\n');
+%% 6. Frequency Combination Optimization Analysis
+fprintf('\n=== Frequency Combination Optimization Analysis ===\n');
 
-% f1_test_range = [1, 5, 10, 20, 50, 100] * 1e3;
-% f2_test_range = [1, 5, 10, 20, 50, 100] * 1e3;
 f1_test_range = linspace(1, 100, 10)*1e3;
 f2_test_range = linspace(1, 100, 10)*1e3;
 optimization_matrix = zeros(length(f1_test_range), length(f2_test_range));
@@ -294,11 +283,11 @@ for i = 1:length(f1_test_range)
         optimization_matrix(i,j) = results.fund * results.harm * 10000;
         
         current_point = current_point + 1;
-        showProgress(current_point, total_points, '频率组合优化进度');
+        showProgress(current_point, total_points, 'Frequency Combination Optimization Progress');
     end
 end
 
-% 绘制优化热图
+% Plot optimization heatmap
 figure('Position', [100, 100, 800, 800], 'Color', 'w');
 imagesc(f2_test_range/1e3, f1_test_range/1e3, optimization_matrix);
 colorbar;
@@ -309,10 +298,10 @@ title('Frequency Combination Optimization (ξ(f_1)×ξ(f_2))', 'FontSize',24, 'F
 colormap(jet);
 set(gcf, 'Color', 'w');
 
-%% 7. 性能指标计算和结果保存
-fprintf('\n=== 性能指标计算和结果保存 ===\n');
+%% 7. Performance Metric Calculation and Result Saving
+fprintf('\n=== Performance Metric Calculation and Result Saving ===\n');
 
-% 计算关键性能指标
+% Calculate key performance metrics
 performanceMetrics = struct(...
     'max_CM1_performance', max(components_relative_1(:)), ...
     'optimal_CM1', m_s_range(components_relative_1(:,1) == max(components_relative_1(:,1))), ...
@@ -324,7 +313,7 @@ performanceMetrics = struct(...
     'optimal_f2', f2_range(components_f2(:,1) == max(components_f2(:,1))) / 1e3 ...
 );
 
-% 保存结果
+% Save results
 analysisResults = struct(...
     'CM1_analysis', components_relative_1, ...
     'CM2_analysis', components_relative_2, ...
@@ -340,21 +329,21 @@ analysisResults = struct(...
 );
 
 % save('SAC_Analysis_Results.mat', 'analysisResults');
-% fprintf('分析结果已保存到 SAC_Analysis_Results.mat\n');
+% fprintf('Analysis results saved to SAC_Analysis_Results.mat\n');
 
-%% 8. 生成总结报告
-fprintf('\n===== SAC调制频谱分析总结 =====\n');
-fprintf('分析完成时间: %s\n', datestr(now));
-fprintf('总分析数据点: %d\n', length(m_s_range)+length(m_d_range) + ...
+%% 8. Generate Summary Report
+fprintf('\n===== SAC Modulation Spectrum Analysis Summary =====\n');
+fprintf('Analysis completion time: %s\n', datestr(now));
+fprintf('Total analysis data points: %d\n', length(m_s_range)+length(m_d_range) + ...
     length(I_exc_range) + length(I_hexc_range) + length(f1_range) + ...
     length(f2_range) + numel(optimization_matrix));
-fprintf('\n主要发现:\n');
-fprintf('1. 最佳CM1调制深度: %.2f\n', performanceMetrics.optimal_CM1);
-fprintf('2. 最佳CM2调制深度: %.2f\n', performanceMetrics.optimal_CM2);
-fprintf('3. 最佳激发光强: %.1f kW/cm²\n', performanceMetrics.optimal_I_exc);
-fprintf('4. 最佳竞争光强: %.1f MW/cm²\n', performanceMetrics.optimal_I_hexc); 
-fprintf('5. 最佳调制频率 f1: %.1f kHz\n', performanceMetrics.optimal_f1);
-fprintf('6. 最佳调制频率 f2: %.1f kHz\n', performanceMetrics.optimal_f2);
-fprintf('7. 最大性能指标: %.4f\n', performanceMetrics.max_CM2_performance);
+fprintf('\nKey Findings:\n');
+fprintf('1. Optimal CM1 modulation depth: %.2f\n', performanceMetrics.optimal_CM1);
+fprintf('2. Optimal CM2 modulation depth: %.2f\n', performanceMetrics.optimal_CM2);
+fprintf('3. Optimal excitation light intensity: %.1f kW/cm²\n', performanceMetrics.optimal_I_exc);
+fprintf('4. Optimal competition light intensity: %.1f MW/cm²\n', performanceMetrics.optimal_I_hexc); 
+fprintf('5. Optimal modulation frequency f1: %.1f kHz\n', performanceMetrics.optimal_f1);
+fprintf('6. Optimal modulation frequency f2: %.1f kHz\n', performanceMetrics.optimal_f2);
+fprintf('7. Maximum performance metric: %.4f\n', performanceMetrics.max_CM2_performance);
 
-fprintf('\n分析完成！所有结果已保存并可视化。\n');
+fprintf('\nAnalysis completed! All results have been saved and visualized.\n');
