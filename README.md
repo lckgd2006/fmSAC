@@ -8,18 +8,18 @@ This project focuses on the **nonlinear dynamics** of frequency-modulation satur
 
 |Category|File Name|Description|
 |---|---|---|
-|Nonlinear Physical Mechanism Analysis|`freqSAC_nonlinear_v3.m`|Core file that conducts systematic discussion and derivation on the nonlinear physical mechanism of fmSAC technology, serving as the foundation for understanding fmSAC imaging principles.|
+|Nonlinear Physical Mechanism Analysis|`freqSAC_nonlinear.m`|Core file that conducts systematic discussion and derivation on the nonlinear physical mechanism of fmSAC technology, serving as the foundation for understanding fmSAC imaging principles.|
 |Single-Point fmSAC Result Analysis and Parameter Exploration|`freqSAC_analysis_v3.m`|Performs basic analysis on the frequency-domain modulation saturated absorption competition (fmSAC) experimental/simulation results of a single detection point, outputting core characteristic data at the single-point level.|
-||`freqSAC_Impact_v3.m`|Explores the influence of multiple key parameters (e.g., light intensity, modulation frequency, molecular concentration) on single-point fmSAC results, quantifying the correlation between parameter changes and imaging effects.|
-||`freqSAC_Impact_lambda_v6.m`|Specializes in in-depth analysis of wavelength parameters, supporting two plotting modes (`combined` for comparative analysis and `individual` for single-wavelength independent analysis) to intuitively demonstrate the effect of different wavelengths on single-point fmSAC results.|
-||`freqSAC_alpha_v4.m`|Proposes improvement schemes for fmSAC imaging quality by analyzing and optimizing the difference coefficient (α), enhancing imaging resolution and contrast.|
+||`freqSAC_Impact.m`|Explores the influence of multiple key parameters (e.g., light intensity, modulation frequency, molecular concentration) on single-point fmSAC results, quantifying the correlation between parameter changes and imaging effects.|
+||`freqSAC_Impact_lambda.m`|Specializes in in-depth analysis of wavelength parameters, supporting two plotting modes (`combined` for comparative analysis and `individual` for single-wavelength independent analysis) to intuitively demonstrate the effect of different wavelengths on single-point fmSAC results.|
+||`freqSAC_alpha.m`|Proposes improvement schemes for fmSAC imaging quality by analyzing and optimizing the difference coefficient (α), enhancing imaging resolution and contrast.|
 |Modulation Contrast and Imaging Optimization|`freqSAC_ContrastModulation_1_v2.m`|Investigates the excitation light modulation contrast, analyzes its influence mechanism on the overall fmSAC imaging effect, and clarifies the correlation between contrast and imaging quality.|
-||`freqSAC_plus_cm1_v2.m`|Based on the analysis results of `freqSAC_ContrastModulation_1_v2`, optimizes fmSAC imaging performance by reducing the excitation light modulation contrast.|
-||`freqSAC_ContrastModulation_2_v4.m`|Further explores the role of modulation contrast (focusing on the competition light dimension) in fmSAC imaging, supplementing analytical perspectives from different optical field modulation dimensions.|
-||`freqSAC_plus_cm2_v7.m`|Specifically increases the competition light modulation contrast to verify its optimization effect on fmSAC imaging resolution and signal-to-noise ratio.|
-|Photobleaching Performance Analysis|`freqSAC_bleaching_v7.m`|Compares the photobleaching characteristics of fmSAC imaging with traditional saturated absorption competition (SAC) microscopy, quantifying the performance advantages of fmSAC in reducing fluorophore photobleaching and extending imaging duration.|
-||`freqSAC_bleaching_v6.m`|Builds on `freqSAC_bleaching_v7` to develop a visual GUI interface, supporting the viewing of imaging conditions at any scan number for interactive analysis of photobleaching changes during the scanning process.|
-|3D Imaging Analysis|`freqSAC_imaging_3D_v6.m`|Simulates and analyzes the imaging capability of fmSAC for 3D randomly distributed fluorophores, verifying the feasibility and accuracy of fmSAC technology in 3D biological sample imaging.|
+||`freqSAC_plus_cm1.m`|Based on the analysis results of `freqSAC_ContrastModulation_1_v2`, optimizes fmSAC imaging performance by reducing the excitation light modulation contrast.|
+||`freqSAC_ContrastModulation_2.m`|Further explores the role of modulation contrast (focusing on the competition light dimension) in fmSAC imaging, supplementing analytical perspectives from different optical field modulation dimensions.|
+||`freqSAC_plus_cm2.m`|Specifically increases the competition light modulation contrast to verify its optimization effect on fmSAC imaging resolution and signal-to-noise ratio.|
+|Photobleaching Performance Analysis|`freqSAC_bleaching.m`|Compares the photobleaching characteristics of fmSAC imaging with traditional saturated absorption competition (SAC) microscopy, quantifying the performance advantages of fmSAC in reducing fluorophore photobleaching and extending imaging duration.|
+||`freqSAC_bleaching_GUI.m`|Builds on `freqSAC_bleaching` to develop a visual GUI interface, supporting the viewing of imaging conditions at any scan number for interactive analysis of photobleaching changes during the scanning process.|
+|3D Imaging Analysis|`freqSAC_imaging_3D.m`|Simulates and analyzes the imaging capability of fmSAC for 3D randomly distributed fluorophores, verifying the feasibility and accuracy of fmSAC technology in 3D biological sample imaging.|
 ## Data File Descriptions
 
 The project relies on the following pre-generated illumination light field data files (MATLAB .mat format) to simulate light field distributions under different wavelengths and illumination modes:
