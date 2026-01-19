@@ -3,6 +3,7 @@
 ## Project Overview
 
 This project focuses on the **nonlinear dynamics** of frequency-modulation saturated absorption competition microscopy (fmSAC). Through a series of MATLAB scripts, it systematically investigates core issues including the physical mechanism, parameter influences, imaging optimization, photobleaching performance, and 3D imaging capability of fmSAC. The work provides theoretical and data support for the practical application of fmSAC microscopy technology.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18295958.svg)](https://doi.org/10.5281/zenodo.18295958)
 
 ## Code File Descriptions
 
